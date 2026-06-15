@@ -68,9 +68,7 @@ class KeyShotSubmitterAPI(SubmitterAPI):
             for step in job_template.get("steps", []):
                 if "hostRequirements" not in step:
                     step["hostRequirements"] = {}
-                step["hostRequirements"]["amounts"] = [
-                    {"name": "amount.worker.gpu", "min": 1}
-                ]
+                step["hostRequirements"]["amounts"] = [{"name": "amount.worker.gpu", "min": 1}]
 
         return job_template
 
@@ -85,9 +83,7 @@ class KeyShotSubmitterAPI(SubmitterAPI):
 
         if isinstance(settings, KeyShotSubmitterSettings):
             parameter_values.append({"name": "KeyShotFile", "value": settings.scene_file})
-            parameter_values.append(
-                {"name": "RenderDevice", "value": settings.render_device}
-            )
+            parameter_values.append({"name": "RenderDevice", "value": settings.render_device})
             parameter_values.append(
                 {"name": "OverrideRenderDevice", "value": str(settings.override_render_device)}
             )
@@ -113,9 +109,7 @@ class KeyShotSubmitterAPI(SubmitterAPI):
         native.input_directories = list(settings.input_directories)
         native.output_directories = list(settings.output_directories)
         native.referenced_paths = (
-            settings.referenced_paths
-            if isinstance(settings, KeyShotSubmitterSettings)
-            else []
+            settings.referenced_paths if isinstance(settings, KeyShotSubmitterSettings) else []
         )
         native.auto_detected_input_filenames = (
             settings.auto_detected_input_filenames
