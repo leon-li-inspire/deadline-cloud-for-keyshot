@@ -104,18 +104,16 @@ class KeyShotSubmitterAPI(SubmitterAPI):
     def get_asset_references(self, settings: SubmitterSettings) -> dict[str, Any]:
         from submitter import Settings as NativeSettings, construct_asset_references
 
-        native = NativeSettings()
-        native.input_filenames = list(settings.input_filenames)
-        native.input_directories = list(settings.input_directories)
-        native.output_directories = list(settings.output_directories)
-        native.referenced_paths = (
-            settings.referenced_paths if isinstance(settings, KeyShotSubmitterSettings) else []
+        is_keyshot = isinstance(settings, KeyShotSubmitterSettings)
+        native = NativeSettings(
+            parameter_values=[],
+            input_filenames=list(settings.input_filenames),
+            input_directories=list(settings.input_directories),
+            output_directories=list(settings.output_directories),
+            referenced_paths=settings.referenced_paths if is_keyshot else [],
+            auto_detected_input_filenames=(
+                settings.auto_detected_input_filenames if is_keyshot else []
+            ),
         )
-        native.auto_detected_input_filenames = (
-            settings.auto_detected_input_filenames
-            if isinstance(settings, KeyShotSubmitterSettings)
-            else []
-        )
-        native.parameter_values = []
 
         return construct_asset_references(native)
