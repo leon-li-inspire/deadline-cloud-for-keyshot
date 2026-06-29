@@ -5,7 +5,18 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from deadline.client.submitter_api import SubmitterAPI, SubmitterSettings
+import lux  # type: ignore[import]
+
+from deadline.client.submitter_api import (
+    SubmitterAPI,
+    SubmitterSettings,
+    set_conda_packages,
+)
+from submitter import (
+    Settings as NativeSettings,
+    construct_asset_references,
+    construct_job_template,
+)
 
 
 @dataclass
@@ -23,8 +34,6 @@ class KeyShotSubmitterAPI(SubmitterAPI):
     """SubmitterAPI implementation for KeyShot submissions."""
 
     def get_settings(self) -> KeyShotSubmitterSettings:
-        import lux  # type: ignore[import]
-
         settings = KeyShotSubmitterSettings()
         scene_file = lux.getSceneFileName() or ""
         settings.scene_file = scene_file
@@ -56,8 +65,6 @@ class KeyShotSubmitterAPI(SubmitterAPI):
         settings: SubmitterSettings,
         host_requirements: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
-        from submitter import construct_job_template
-
         job_template = construct_job_template(settings.name)
 
         if host_requirements:
@@ -77,8 +84,6 @@ class KeyShotSubmitterAPI(SubmitterAPI):
         settings: SubmitterSettings,
         queue_parameters: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
-        import lux  # type: ignore[import]
-
         parameter_values: list[dict[str, Any]] = []
 
         if isinstance(settings, KeyShotSubmitterSettings):
@@ -88,22 +93,26 @@ class KeyShotSubmitterAPI(SubmitterAPI):
                 {"name": "OverrideRenderDevice", "value": str(settings.override_render_device)}
             )
 
-        major_version, _ = lux.getKeyShotDisplayVersion()
-        parameter_values.append({"name": "CondaPackages", "value": f"keyshot={major_version}.*"})
-        parameter_values.append({"name": "CondaChannels", "value": ""})
-
         if settings.frame_list:
             parameter_values.append({"name": "Frames", "value": settings.frame_list})
 
+        # CondaPackages/CondaChannels are NOT defined in the KeyShot job template; they are
+        # provided by the queue's Conda queue environment. Emitting them as standalone job
+        # parameters would (a) be rejected by CreateJob as undefined parameters and (b) collide
+        # with the same-named queue parameters appended below. Instead, carry the queue
+        # parameters through and merge the required KeyShot conda package into CondaPackages,
+        # which set_conda_packages() does in-place (updating the existing queue parameter or
+        # appending one only if the queue environment does not define it).
         parameter_values.extend(
             {"name": param["name"], "value": param["value"]} for param in queue_parameters
         )
 
+        major_version, _ = lux.getKeyShotDisplayVersion()
+        set_conda_packages(parameter_values, f"keyshot={major_version}.*")
+
         return parameter_values
 
     def get_asset_references(self, settings: SubmitterSettings) -> dict[str, Any]:
-        from submitter import Settings as NativeSettings, construct_asset_references
-
         is_keyshot = isinstance(settings, KeyShotSubmitterSettings)
         native = NativeSettings(
             parameter_values=[],
