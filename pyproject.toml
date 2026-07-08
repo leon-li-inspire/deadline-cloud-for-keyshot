@@ -28,6 +28,7 @@ classifiers = [
 
 dependencies = [
   "boto3",
+  "deadline",
 ]
 
 [project.urls]
@@ -66,7 +67,7 @@ explicit_package_bases = true
 mypy_path = "src"
 
 [[tool.mypy.overrides]]
-module = ["lux.*", "qtpy.*"]
+module = ["lux.*", "qtpy.*", "deadline.*", "submitter"]
 ignore_missing_imports = true
 
 [tool.ruff]
